@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
 import { useStore } from "../store";
+import { NODE_TYPES } from "../constants";
 
 export const OutputNode = ({ id, data }) => {
   const updateNodeField = useStore((state) => state.updateNodeField);
 
-  const currName = data?.outputName || id.replace("customOutput-", "output_");
+  const currName =
+    data?.outputName || id.replace(NODE_TYPES.CUSTOM_OUTPUT + "-", "output_");
   const outputType = data?.outputType || "Text";
 
   useEffect(() => {

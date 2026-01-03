@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
 import { useStore } from "../store";
+import { NODE_TYPES } from "../constants";
 
 export const InputNode = ({ id, data }) => {
   const updateNodeField = useStore((state) => state.updateNodeField);
-  const currName = data?.inputName || id.replace("customInput-", "input_");
+  const currName =
+    data?.inputName || id.replace(NODE_TYPES.CUSTOM_INPUT + "-", "input_");
   const inputType = data?.inputType || "Text";
 
   useEffect(() => {
