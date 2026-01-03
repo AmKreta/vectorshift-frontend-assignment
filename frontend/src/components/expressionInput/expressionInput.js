@@ -28,24 +28,47 @@ export const ExpressionInput = ({
 
   const handlekeyPress = (e) => {
     const key = e.key;
+
     if (key === "{" && editorMode === EditorMode.EXPRESSION) {
-      e.stopPropagation();
-    }
-    if (key === "Backspace" && editorMode === EditorMode.EXPRESSION) {
-      e.stopPropagation();
+      // don't let user write another opening bracket
+      e.preventDefault();
     }
   };
 
   const handleChange = (e) => {
     const val = e.target.value;
+
+    if (editorMode === EditorMode.EXPRESSION) {
+      if (val.length < value.length) {
+        // ie user has pressed backspace
+        // we no longer want to be in expression mode, cuz valid us like abc {
+        setEditorMode(EditorMode.STRING);
+        setExpressionSearchValue("");
+        onChange(val);
+        return;
+      }
+      if (val.endsWith("}")) {
+        // user has pressed a closing bracket
+        setEditorMode(EditorMode.STRING);
+        setExpressionSearchValue("");
+        onChange(val + "}");
+        return;
+      }
+    }
+
+    // after writing {{, we don't update value
+    // instead, we update expressionSearchValue
+    // and display this value in the input
     if (editorMode === EditorMode.EXPRESSION) {
       setExpressionSearchValue(val.replace(value, ""));
       return;
     }
-    if (val.endsWith("{{")) {
-      setEditorMode(EditorMode.EXPRESSION);
-    }
-    onChange(e.target.value);
+
+    setEditorMode(
+      val.endsWith("{{") ? EditorMode.EXPRESSION : EditorMode.STRING
+    );
+
+    onChange(val);
   };
 
   const updateExpressionIndexes = (lengthChange) => {
