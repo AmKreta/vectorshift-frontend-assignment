@@ -1,10 +1,9 @@
 // textNode.js
-
-import { useMemo, useState } from "react";
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
 import { useStore } from "../store";
 import { NODE_TYPES } from "../constants";
+import { ExpressionInput } from "../components/expressionInput/expressionInput";
 
 const getAvailableInputNodesMap = (nodes) => {
   return new Map(
@@ -20,17 +19,20 @@ export const TextNode = ({ id, data }) => {
     nodes: state.nodes,
   }));
 
+  const selectedExpressions = data?.selectedExpressions || [];
+  const selectedExpressionsChange = (selectedExpressions) => {
+    updateNodeField(id, "selectedExpressions", selectedExpressions);
+  };
+
   const availableInputNodesMap = getAvailableInputNodesMap(nodes);
   const availableInputNodesNames = [...availableInputNodesMap.values()].map(
     (node) => node.data.inputName
   );
 
-  const currText = data?.text || "{{input}}";
+  const currText = data?.text || "";
 
-  const showInputSelect = currText.endsWith("{{");
-
-  const handleTextChange = (e) => {
-    updateNodeField(id, "text", e.target.value);
+  const handleTextChange = (value) => {
+    updateNodeField(id, "text", value);
   };
 
   const handles = [
@@ -41,9 +43,14 @@ export const TextNode = ({ id, data }) => {
     <BaseNode header="Text" handles={handles}>
       <label>
         Text:
-        <input type="text" value={currText} onChange={handleTextChange} />
+        <ExpressionInput
+          value={currText}
+          onChange={handleTextChange}
+          options={availableInputNodesNames}
+          selectedExpressions={selectedExpressions}
+          selectedExpressionsChange={selectedExpressionsChange}
+        />
       </label>
-      {showInputSelect && <div>input dropdown</div>}
     </BaseNode>
   );
 };
