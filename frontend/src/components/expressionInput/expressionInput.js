@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Select } from "../Select/select";
 
 const EditorMode = {
@@ -15,38 +15,69 @@ export const ExpressionInput = ({
   ...props
 }) => {
   const [editorMode, setEditorMode] = useState(EditorMode.STRING);
-  const [selectedExpressionIndex, setSelectedExpressionIndex] = useState(null);
+  const [selectedExpressionIndex, setSelectedExpressionIndex] = useState(-1);
   const [selecteExpressionValue, setSelecteExpressionValue] = useState("");
 
   const showExpressionSelect = editorMode === EditorMode.EXPRESSION;
   const hasSelectedExpression = selectedExpressionIndex > -1;
 
+  const handlekeyPress = (e) => {
+    const key = e.key;
+    if (key === "{" && editorMode === EditorMode.EXPRESSION) {
+      e.stopPropagation();
+    }
+  };
+
   const handleChange = (e) => {
     const val = e.target.value;
     if (val.endsWith("{{")) {
-      if (editorMode === EditorMode.EXPRESSION) {
-        /// if input is like {{{ then no need to append the value
-        // already in expression mode
-        return;
-      }
       setEditorMode(EditorMode.EXPRESSION);
     }
     onChange(e.target.value);
   };
 
+  const updateExpressionIndexes = (lengthChange) => {
+    for (
+      let i = selectedExpressionIndex + 1;
+      i < selectedExpressions.length;
+      i++
+    ) {
+      selectedExpressions[i].startIndex += lengthChange;
+      selectedExpressions[i].endIndex += lengthChange;
+    }
+  };
+
   const handleExpressionSelect = (e) => {
     const val = e.target.value;
-    const newText = value + val + "}}";
+    if (hasSelectedExpression) {
+      const selectedExpressionsCopy = [...selectedExpressions];
+      const oldExpression = selectedExpressionsCopy[selectedExpressionIndex];
+      const newText =
+        value.slice(0, oldExpression.startIndex) +
+        val +
+        value.slice(oldExpression.endIndex);
 
-    selectedExpressionsChange([
-      ...selectedExpressions,
-      {
+      const lengthChange = val.length - oldExpression.value.length;
+      selectedExpressionsCopy[selectedExpressionIndex] = {
         value: val,
-        startIndex: value.length,
-        endIndex: value.length + val.length,
-      },
-    ]);
-    onChange(newText);
+        startIndex: oldExpression.startIndex,
+        endIndex: oldExpression.endIndex + lengthChange,
+      };
+      updateExpressionIndexes(lengthChange);
+      selectedExpressionsChange(selectedExpressionsCopy);
+      onChange(newText);
+    } else {
+      const newText = value + val + "}}";
+      selectedExpressionsChange([
+        ...selectedExpressions,
+        {
+          value: val,
+          startIndex: value.length,
+          endIndex: value.length + val.length,
+        },
+      ]);
+      onChange(newText);
+    }
     setEditorMode(EditorMode.STRING);
   };
 
@@ -74,7 +105,7 @@ export const ExpressionInput = ({
   const handleBlur = () => {
     if (selectedExpressionIndex > -1) {
     }
-    setSelectedExpressionIndex(null);
+    setSelectedExpressionIndex(-1);
     setEditorMode(EditorMode.STRING);
   };
 
@@ -85,6 +116,7 @@ export const ExpressionInput = ({
         value={value}
         onChange={handleChange}
         onClick={handleInputClick}
+        onKeyDownCapture={handlekeyPress}
         // onBlur={handleBlur}
         {...props}
       />
