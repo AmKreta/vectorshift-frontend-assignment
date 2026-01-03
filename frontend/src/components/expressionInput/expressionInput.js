@@ -17,19 +17,31 @@ export const ExpressionInput = ({
   const [editorMode, setEditorMode] = useState(EditorMode.STRING);
   const [selectedExpressionIndex, setSelectedExpressionIndex] = useState(-1);
   const [selecteExpressionValue, setSelecteExpressionValue] = useState("");
+  const [expressionSearchValue, setExpressionSearchValue] = useState("");
 
   const showExpressionSelect = editorMode === EditorMode.EXPRESSION;
   const hasSelectedExpression = selectedExpressionIndex > -1;
+
+  const filteredOptions = expressionSearchValue
+    ? options.filter((option) => option.includes(expressionSearchValue))
+    : options;
 
   const handlekeyPress = (e) => {
     const key = e.key;
     if (key === "{" && editorMode === EditorMode.EXPRESSION) {
       e.stopPropagation();
     }
+    if (key === "Backspace" && editorMode === EditorMode.EXPRESSION) {
+      e.stopPropagation();
+    }
   };
 
   const handleChange = (e) => {
     const val = e.target.value;
+    if (editorMode === EditorMode.EXPRESSION) {
+      setExpressionSearchValue(val.replace(value, ""));
+      return;
+    }
     if (val.endsWith("{{")) {
       setEditorMode(EditorMode.EXPRESSION);
     }
@@ -79,6 +91,7 @@ export const ExpressionInput = ({
       onChange(newText);
     }
     setEditorMode(EditorMode.STRING);
+    setExpressionSearchValue("");
   };
 
   const handleInputClick = (e) => {
@@ -113,16 +126,16 @@ export const ExpressionInput = ({
     <>
       <input
         type="text"
-        value={value}
+        value={value + expressionSearchValue}
         onChange={handleChange}
         onClick={handleInputClick}
-        onKeyDownCapture={handlekeyPress}
+        onKeyDown={handlekeyPress}
         // onBlur={handleBlur}
         {...props}
       />
       {showExpressionSelect && (
         <Select
-          options={options}
+          options={filteredOptions}
           value={selecteExpressionValue}
           onChange={handleExpressionSelect}
         />
