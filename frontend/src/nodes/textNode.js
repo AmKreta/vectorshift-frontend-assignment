@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
+import { useStore } from "../store";
 
 export const TextNode = ({ id, data }) => {
-  const [currText, setCurrText] = useState(data?.text || "{{input}}");
+  const updateNodeField = useStore((state) => state.updateNodeField);
+
+  const currText = data?.text || "{{input}}";
 
   const handleTextChange = (e) => {
-    setCurrText(e.target.value);
+    updateNodeField(id, "text", e.target.value);
   };
 
   const handles = [

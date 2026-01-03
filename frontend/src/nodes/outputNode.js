@@ -1,21 +1,31 @@
 // outputNode.js
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
+import { useStore } from "../store";
 
 export const OutputNode = ({ id, data }) => {
-  const [currName, setCurrName] = useState(
-    data?.outputName || id.replace("customOutput-", "output_")
-  );
-  const [outputType, setOutputType] = useState(data.outputType || "Text");
+  const updateNodeField = useStore((state) => state.updateNodeField);
+
+  const currName = data?.outputName || id.replace("customOutput-", "output_");
+  const outputType = data?.outputType || "Text";
+
+  useEffect(() => {
+    if (!data?.outputName) {
+      updateNodeField(id, "outputName", currName);
+    }
+    if (!data?.outputType) {
+      updateNodeField(id, "outputType", outputType);
+    }
+  }, [data?.outputName, data?.outputType]);
 
   const handleNameChange = (e) => {
-    setCurrName(e.target.value);
+    updateNodeField(id, "outputName", e.target.value);
   };
 
   const handleTypeChange = (e) => {
-    setOutputType(e.target.value);
+    updateNodeField(id, "outputType", e.target.value);
   };
 
   const handles = [
