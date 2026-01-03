@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Select } from "../Select/select";
 
+const EditorMode = {
+  EXPRESSION: 0,
+  STRING: 1,
+};
+
 export const ExpressionInput = ({
   value,
   onChange,
@@ -9,15 +14,23 @@ export const ExpressionInput = ({
   selectedExpressionsChange,
   ...props
 }) => {
+  const [editorMode, setEditorMode] = useState(EditorMode.STRING);
   const [selectedExpressionIndex, setSelectedExpressionIndex] = useState(null);
-  const [showExpressionSelect, setShowExpressionSelect] = useState(false);
   const [selecteExpressionValue, setSelecteExpressionValue] = useState("");
 
-  useEffect(() => {
-    setShowExpressionSelect(value.endsWith("{{"));
-  }, [value]);
+  const showExpressionSelect = editorMode === EditorMode.EXPRESSION;
+  const hasSelectedExpression = selectedExpressionIndex > -1;
 
   const handleChange = (e) => {
+    const val = e.target.value;
+    if (val.endsWith("{{")) {
+      if (editorMode === EditorMode.EXPRESSION) {
+        /// if input is like {{{ then no need to append the value
+        // already in expression mode
+        return;
+      }
+      setEditorMode(EditorMode.EXPRESSION);
+    }
     onChange(e.target.value);
   };
 
@@ -34,6 +47,7 @@ export const ExpressionInput = ({
       },
     ]);
     onChange(newText);
+    setEditorMode(EditorMode.STRING);
   };
 
   const handleInputClick = (e) => {
@@ -44,16 +58,16 @@ export const ExpressionInput = ({
         selectionStart >= expression.startIndex &&
         selectionEnd <= expression.endIndex
     );
-    if (currSelectedExpressionIndex > -1) {
-      setSelectedExpressionIndex(currSelectedExpressionIndex);
+    setSelectedExpressionIndex(currSelectedExpressionIndex);
+    const hasSelectedExpression = currSelectedExpressionIndex > -1;
+    if (hasSelectedExpression) {
       setSelecteExpressionValue(
         selectedExpressions[currSelectedExpressionIndex].value
       );
-      setShowExpressionSelect(true);
+      setEditorMode(EditorMode.EXPRESSION);
     } else {
-      setShowExpressionSelect(false);
       setSelecteExpressionValue("");
-      setSelectedExpressionIndex(null);
+      setEditorMode(EditorMode.STRING);
     }
   };
 
@@ -61,7 +75,7 @@ export const ExpressionInput = ({
     if (selectedExpressionIndex > -1) {
     }
     setSelectedExpressionIndex(null);
-    setShowExpressionSelect(false);
+    setEditorMode(EditorMode.STRING);
   };
 
   return (
