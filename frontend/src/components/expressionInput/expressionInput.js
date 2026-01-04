@@ -360,11 +360,24 @@ export const ExpressionInput = ({
     onChange(val);
   };
 
-  const handleExpressionSelect = (value) => {
+  const handleExpressionSelect = (val) => {
     if (hasSelectedExpression) {
-      updateExpressionByComparingOldAndNewValues(value);
+      const selectedExpression = selectedExpressions[selectedExpressionIndex];
+      if (selectedExpression.value.length) {
+        // ie user entered some value and then selected an expression
+        // we need to remove the value entered by the user
+        let i = selectedExpression.startIndex;
+        while (i < value.length && value[i] !== "}" && value[i] !== "{") {
+          i++;
+        }
+        value =
+          value.slice(0, selectedExpression.startIndex) +
+          value.slice(selectedExpression.startIndex, i) +
+          "}}";
+      }
+      updateExpressionByComparingOldAndNewValues(val);
     } else {
-      addExpression(value);
+      addExpression(val);
     }
 
     setEditorMode(EditorMode.STRING);

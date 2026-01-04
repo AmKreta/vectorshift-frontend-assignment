@@ -36,9 +36,7 @@ export const TextNode = ({ id, data }) => {
   }));
 
   const availableInputNodesMap = getAvailableInputNodesMap(nodes);
-  const availableInputNodesNames = [...availableInputNodesMap.values()].map(
-    (node) => node.data.inputName
-  );
+  const availableInputNodesNames = [...availableInputNodesMap.keys()];
 
   const selectedExpressions = data?.selectedExpressions || [];
 
