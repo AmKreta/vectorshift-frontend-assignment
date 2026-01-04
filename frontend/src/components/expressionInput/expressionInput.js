@@ -406,6 +406,7 @@ export const ExpressionInput = ({
         onChange={handleChange}
         onClick={handleInputClick}
         onKeyDown={handlekeyPress}
+        dynamicHeight
         // onBlur={handleBlur}
         {...props}
       />
