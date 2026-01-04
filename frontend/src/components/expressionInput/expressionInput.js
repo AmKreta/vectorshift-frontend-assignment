@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Select } from "../Select/select";
+import { useAfterNextRender } from "../../hooks/useAfterNextRender";
 
 const EditorMode = {
   EXPRESSION: 0,
@@ -21,6 +22,7 @@ export const ExpressionInput = ({
   const [lockCaret, setLockCaret] = useState(false);
 
   const inputRef = useRef(null);
+  const afterNextRender = useAfterNextRender();
 
   const showExpressionSelect = editorMode === EditorMode.EXPRESSION;
   const hasSelectedExpression = selectedExpressionIndex > -1;
@@ -228,6 +230,9 @@ export const ExpressionInput = ({
   const handleExpressionSelect = (e) => {
     const val = e.target.value;
     if (hasSelectedExpression) {
+      /**
+       * editing an expression
+       */
       const selectedExpressionsCopy = [...selectedExpressions];
       const oldExpression = selectedExpressionsCopy[selectedExpressionIndex];
       const newText =
@@ -236,28 +241,44 @@ export const ExpressionInput = ({
         value.slice(oldExpression.endIndex);
 
       const lengthChange = val.length - oldExpression.value.length;
-      selectedExpressionsCopy[selectedExpressionIndex] = {
+      const newVal = {
         value: val,
         startIndex: oldExpression.startIndex,
         endIndex: oldExpression.endIndex + lengthChange,
       };
+      selectedExpressionsCopy[selectedExpressionIndex] = newVal;
       updateExpressionIndexes(selectedExpressionsCopy, lengthChange);
       selectedExpressionsChange(selectedExpressionsCopy);
       onChange(newText);
+      afterNextRender(() => {
+        inputRef.current.focus();
+        const endPosition = newVal.endIndex + 2;
+        inputRef.current.setSelectionRange(endPosition, endPosition);
+      });
     } else {
+      /**
+       * adding a new expression
+       */
       const newText = value + val + "}}";
-      selectedExpressionsChange([
-        ...selectedExpressions,
-        {
-          value: val,
-          startIndex: value.length,
-          endIndex: value.length + val.length,
-        },
-      ]);
+      const newVal = {
+        value: val,
+        startIndex: value.length,
+        endIndex: value.length + val.length,
+      };
+      selectedExpressionsChange([...selectedExpressions, newVal]);
+      afterNextRender(() => {
+        inputRef.current.focus();
+        const endPosition = newVal.endIndex + 2;
+        inputRef.current.setSelectionRange(endPosition, endPosition);
+      });
       onChange(newText);
     }
+
     setEditorMode(EditorMode.STRING);
     setExpressionSearchValue("");
+    setLockCaret(false);
+    setSelecteExpressionValue("");
+    setSelectedExpressionIndex(-1);
   };
 
   const handleInputClick = (e) => {
@@ -268,16 +289,28 @@ export const ExpressionInput = ({
         selectionStart >= expression.startIndex &&
         selectionEnd <= expression.endIndex
     );
+    if (currSelectedExpressionIndex === selectedExpressionIndex) {
+      // clicked on same expresion twice
+      setLockCaret(false);
+      e.target.setSelectionRange(selectionEnd, selectionEnd);
+      return;
+    }
     setSelectedExpressionIndex(currSelectedExpressionIndex);
     const hasSelectedExpression = currSelectedExpressionIndex > -1;
     if (hasSelectedExpression) {
-      setSelecteExpressionValue(
-        selectedExpressions[currSelectedExpressionIndex].value
-      );
+      const selectedExpression =
+        selectedExpressions[currSelectedExpressionIndex];
+      setSelecteExpressionValue(selectedExpression.value);
       setEditorMode(EditorMode.EXPRESSION);
+      setLockCaret(true);
+      inputRef.current.setSelectionRange(
+        selectedExpression.startIndex,
+        selectedExpression.endIndex
+      );
     } else {
       setSelecteExpressionValue("");
       setEditorMode(EditorMode.STRING);
+      setLockCaret(false);
     }
   };
 
