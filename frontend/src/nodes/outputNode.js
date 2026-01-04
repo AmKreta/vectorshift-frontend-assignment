@@ -1,10 +1,20 @@
 // outputNode.js
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
 import { useStore } from "../store";
 import { NODE_TYPES } from "../constants";
+import styled from "@emotion/styled";
+import { FormControl } from "../components/formControl/formControl";
+import { Input } from "../components/Input/input";
+import { Select } from "../components/Select/select";
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
 
 export const OutputNode = ({ id, data }) => {
   const updateNodeField = useStore((state) => state.updateNodeField);
@@ -36,17 +46,18 @@ export const OutputNode = ({ id, data }) => {
 
   return (
     <BaseNode header="Output" handles={handles}>
-      <label>
-        Name:
-        <input type="text" value={currName} onChange={handleNameChange} />
-      </label>
-      <label>
-        Type:
-        <select value={outputType} onChange={handleTypeChange}>
-          <option value="Text">Text</option>
-          <option value="File">Image</option>
-        </select>
-      </label>
+      <Container>
+        <FormControl label="Name:">
+          <Input type="text" value={currName} onChange={handleNameChange} />
+        </FormControl>
+        <FormControl label="Type:">
+          <Select
+            value={outputType}
+            onChange={handleTypeChange}
+            options={["Text", "Image"]}
+          />
+        </FormControl>
+      </Container>
     </BaseNode>
   );
 };

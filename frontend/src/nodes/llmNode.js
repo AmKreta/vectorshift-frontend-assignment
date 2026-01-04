@@ -2,6 +2,7 @@
 
 import { Position } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
+import { Text } from "../components/text/text";
 
 export const LLMNode = ({ id, data }) => {
   const handles = [
@@ -21,7 +22,7 @@ export const LLMNode = ({ id, data }) => {
   ];
   return (
     <BaseNode header="LLM" handles={handles}>
-      <span>This is a LLM.</span>
+      <Text variant="medium">This is a LLM.</Text>
     </BaseNode>
   );
 };

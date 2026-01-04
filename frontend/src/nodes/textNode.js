@@ -4,6 +4,7 @@ import { BaseNode } from "../components/baseNode/baseNode";
 import { useStore } from "../store";
 import { NODE_TYPES } from "../constants";
 import { ExpressionInput } from "../components/expressionInput/expressionInput";
+import { FormControl } from "../components/formControl/formControl";
 
 const getAvailableInputNodesMap = (nodes) => {
   return new Map(
@@ -41,8 +42,7 @@ export const TextNode = ({ id, data }) => {
 
   return (
     <BaseNode header="Text" handles={handles}>
-      <label>
-        Text:
+      <FormControl label="Text:">
         <ExpressionInput
           value={currText}
           onChange={handleTextChange}
@@ -50,7 +50,7 @@ export const TextNode = ({ id, data }) => {
           selectedExpressions={selectedExpressions}
           onSelectedExpressionsChange={onSelectedExpressionsChange}
         />
-      </label>
+      </FormControl>
     </BaseNode>
   );
 };

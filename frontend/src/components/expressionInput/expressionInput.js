@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Select } from "../Select/select";
 import { useAfterNextRender } from "../../hooks/useAfterNextRender";
+import { Input } from "../Input/input";
 
 const EditorMode = {
   EXPRESSION: 0,
@@ -394,7 +395,7 @@ export const ExpressionInput = ({
 
   return (
     <>
-      <input
+      <Input
         ref={inputRef}
         type="text"
         value={value}
