@@ -51,7 +51,44 @@ export const ExpressionInput = ({
     onChange(newText);
   }
 
-  function editExpression() {}
+  /**
+   * pass input value here
+   * if any expression is being edited, compares the expression old and new value
+   * and updates the expression indexes and text of the input
+   */
+  function updateExpressionByComparingOldAndNewValues(val) {
+    if (selectedExpressionIndex <= -1) {
+      return;
+    }
+    const oldExpression = selectedExpressions[selectedExpressionIndex];
+
+    const lengthChange = val.length - oldExpression.value.length;
+    const newVal = {
+      value: val,
+      startIndex: oldExpression.startIndex,
+      endIndex: oldExpression.endIndex + lengthChange,
+    };
+    updateExpressionAtIndex(newVal);
+    return newVal;
+  }
+
+  function updateExpressionAtIndex(newVal, index = selectedExpressionIndex) {
+    const oldExpression = selectedExpressions[index];
+    const lengthChange = newVal.value.length - oldExpression.value.length;
+    selectedExpressions[index] = newVal;
+    updateExpressionIndexes(selectedExpressions, lengthChange);
+    onSelectedExpressionsChange([...selectedExpressions]);
+    const newText =
+      value.slice(0, oldExpression.startIndex) +
+      newVal.value +
+      value.slice(oldExpression.endIndex);
+    onChange(newText);
+    afterNextRender(() => {
+      inputRef.current.focus();
+      const endPosition = newVal.endIndex + 2;
+      inputRef.current.setSelectionRange(endPosition, endPosition);
+    });
+  }
 
   function deleteExpression(deleteIndex) {
     const selectedExpressionsCopy = [...selectedExpressions];
@@ -66,6 +103,52 @@ export const ExpressionInput = ({
       value.slice(deletedExpression.endIndex + 2);
     onChange(newText);
   }
+
+  /**
+   * tries to select an expression from begining to end
+   * selects an expression from begining to end
+   * lock means caret is selected from begining to end
+   * if no expression is found, sets editor mode to string
+   */
+  function trySelectAndLockExpression(index) {
+    setSelectedExpressionIndex(index);
+    const hasSelectedExpression = index > -1;
+    if (hasSelectedExpression) {
+      const selectedExpression = selectedExpressions[index];
+      setSelecteExpressionValue(selectedExpression.value);
+      setEditorMode(EditorMode.EXPRESSION);
+      setLockCaret(true);
+      inputRef.current.setSelectionRange(
+        selectedExpression.startIndex,
+        selectedExpression.endIndex
+      );
+    } else {
+      setSelecteExpressionValue("");
+      setEditorMode(EditorMode.STRING);
+      setLockCaret(false);
+    }
+  }
+
+  /**
+   * unlocks the expression
+   * caret is not selected from begining to end
+   * you can edit the expression using keyboard input after calling this function
+   */
+  function unlockSelecedExpression(caretPosition) {
+    setLockCaret(false);
+    inputRef.current.setSelectionRange(caretPosition, caretPosition);
+  }
+
+  const updateExpressionIndexes = (
+    expressions,
+    lengthChange,
+    index = selectedExpressionIndex + 1
+  ) => {
+    for (let i = index; i < expressions.length; i++) {
+      expressions[i].startIndex += lengthChange;
+      expressions[i].endIndex += lengthChange;
+    }
+  };
 
   const handlekeyPress = (e) => {
     const key = e.key;
@@ -119,15 +202,7 @@ export const ExpressionInput = ({
       }
       // don't let user delete the closing bracket
       e.preventDefault();
-      const selectedExpression = selectedExpressions[closestExpressionIndex];
-      e.target.setSelectionRange(
-        selectedExpression.startIndex,
-        selectedExpression.endIndex
-      );
-      setEditorMode(EditorMode.EXPRESSION);
-      setSelectedExpressionIndex(closestExpressionIndex);
-      setSelecteExpressionValue(selectedExpression.value);
-      setLockCaret(true);
+      trySelectAndLockExpression(closestExpressionIndex);
     }
 
     const leftKey = "ArrowLeft";
@@ -162,15 +237,7 @@ export const ExpressionInput = ({
         );
       }
       if (closestExpressionIndex > -1) {
-        const selectedExpression = selectedExpressions[closestExpressionIndex];
-        e.target.setSelectionRange(
-          selectedExpression.startIndex,
-          selectedExpression.endIndex
-        );
-        setEditorMode(EditorMode.EXPRESSION);
-        setSelectedExpressionIndex(closestExpressionIndex);
-        setSelecteExpressionValue(selectedExpression.value);
-        setLockCaret(true);
+        trySelectAndLockExpression(closestExpressionIndex);
       } else {
         setLockCaret(false);
       }
@@ -191,17 +258,10 @@ export const ExpressionInput = ({
       }
       e.preventDefault();
       if (leftKeyPressed) {
-        e.target.setSelectionRange(
-          selectedExpression.startIndex,
-          selectedExpression.startIndex
-        );
+        unlockSelecedExpression(selectedExpression.startIndex);
       } else if (rightKeyPressed) {
-        e.target.setSelectionRange(
-          selectedExpression.endIndex,
-          selectedExpression.endIndex
-        );
+        unlockSelecedExpression(selectedExpression.endIndex);
       }
-      setLockCaret(false);
     }
   };
 
@@ -218,28 +278,13 @@ export const ExpressionInput = ({
       let selectedExpression = selectedExpressions[selectedExpressionIndex];
       if (selectedExpression) {
         // expression being edited
-        let currentExpression = {
-          value: "",
-          startIndex: selectedExpression.startIndex,
-          endIndex: -1,
-        };
         let i = selectedExpression.startIndex;
         while (val[i] !== "}") {
-          currentExpression.value += val[i];
           i++;
         }
-        currentExpression.endIndex = i;
-
-        // we got new value for expression being edited
-        // updater the value
-        const lengthChange =
-          currentExpression.value.length - selectedExpression.value.length;
-        selectedExpression = { ...currentExpression };
-        selectedExpressions[selectedExpressionIndex] = selectedExpression;
-        updateExpressionIndexes(selectedExpressions, lengthChange);
-        onSelectedExpressionsChange(selectedExpressions);
-        onChange(val);
-        const endPosition = selectedExpression.endIndex;
+        const value = val.slice(selectedExpression.startIndex, i);
+        const newExpression = updateExpressionByComparingOldAndNewValues(value);
+        const endPosition = newExpression.endIndex;
         queueMicrotask(() => {
           inputRef.current.setSelectionRange(endPosition, endPosition);
         });
@@ -255,15 +300,7 @@ export const ExpressionInput = ({
         while (i > 2 && !(val[i] === "{" && val[i - 1] === "{")) {
           i--;
         }
-        const currentExpression = {
-          value: val.slice(i, val.length),
-          startIndex: i,
-          endIndex: val.length,
-        };
-        onSelectedExpressionsChange([
-          ...selectedExpressions,
-          currentExpression,
-        ]);
+        addExpression(val.slice(i, val.length));
         return;
       }
     } else {
@@ -275,45 +312,10 @@ export const ExpressionInput = ({
     onChange(val);
   };
 
-  const updateExpressionIndexes = (
-    expressions,
-    lengthChange,
-    index = selectedExpressionIndex + 1
-  ) => {
-    for (let i = index; i < expressions.length; i++) {
-      expressions[i].startIndex += lengthChange;
-      expressions[i].endIndex += lengthChange;
-    }
-  };
-
   const handleExpressionSelect = (e) => {
     const val = e.target.value;
     if (hasSelectedExpression) {
-      /**
-       * editing an expression
-       */
-      const selectedExpressionsCopy = [...selectedExpressions];
-      const oldExpression = selectedExpressionsCopy[selectedExpressionIndex];
-      const newText =
-        value.slice(0, oldExpression.startIndex) +
-        val +
-        value.slice(oldExpression.endIndex);
-
-      const lengthChange = val.length - oldExpression.value.length;
-      const newVal = {
-        value: val,
-        startIndex: oldExpression.startIndex,
-        endIndex: oldExpression.endIndex + lengthChange,
-      };
-      selectedExpressionsCopy[selectedExpressionIndex] = newVal;
-      updateExpressionIndexes(selectedExpressionsCopy, lengthChange);
-      onSelectedExpressionsChange(selectedExpressionsCopy);
-      onChange(newText);
-      afterNextRender(() => {
-        inputRef.current.focus();
-        const endPosition = newVal.endIndex + 2;
-        inputRef.current.setSelectionRange(endPosition, endPosition);
-      });
+      updateExpressionByComparingOldAndNewValues(val);
     } else {
       addExpression(val);
     }
@@ -334,27 +336,10 @@ export const ExpressionInput = ({
     );
     if (currSelectedExpressionIndex === selectedExpressionIndex) {
       // clicked on same expresion twice
-      setLockCaret(false);
-      e.target.setSelectionRange(selectionEnd, selectionEnd);
+      unlockSelecedExpression(selectionEnd);
       return;
     }
-    setSelectedExpressionIndex(currSelectedExpressionIndex);
-    const hasSelectedExpression = currSelectedExpressionIndex > -1;
-    if (hasSelectedExpression) {
-      const selectedExpression =
-        selectedExpressions[currSelectedExpressionIndex];
-      setSelecteExpressionValue(selectedExpression.value);
-      setEditorMode(EditorMode.EXPRESSION);
-      setLockCaret(true);
-      inputRef.current.setSelectionRange(
-        selectedExpression.startIndex,
-        selectedExpression.endIndex
-      );
-    } else {
-      setSelecteExpressionValue("");
-      setEditorMode(EditorMode.STRING);
-      setLockCaret(false);
-    }
+    trySelectAndLockExpression(currSelectedExpressionIndex);
   };
 
   const handleBlur = () => {
