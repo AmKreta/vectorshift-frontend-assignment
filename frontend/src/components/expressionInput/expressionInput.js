@@ -18,6 +18,7 @@ export const ExpressionInput = ({
   const [selectedExpressionIndex, setSelectedExpressionIndex] = useState(-1);
   const [selecteExpressionValue, setSelecteExpressionValue] = useState("");
   const [expressionSearchValue, setExpressionSearchValue] = useState("");
+  const [lockCaret, setLockCaret] = useState(false);
 
   const inputRef = useRef(null);
 
@@ -69,6 +70,7 @@ export const ExpressionInput = ({
           selectedExpression.startIndex
         );
         setEditorMode(EditorMode.STRING);
+        setLockCaret(false);
         return;
       }
     }
@@ -97,6 +99,7 @@ export const ExpressionInput = ({
       setEditorMode(EditorMode.EXPRESSION);
       setSelectedExpressionIndex(closestExpressionIndex);
       setSelecteExpressionValue(selectedExpression.value);
+      setLockCaret(true);
     }
 
     const leftKey = "ArrowLeft";
@@ -139,6 +142,9 @@ export const ExpressionInput = ({
         setEditorMode(EditorMode.EXPRESSION);
         setSelectedExpressionIndex(closestExpressionIndex);
         setSelecteExpressionValue(selectedExpression.value);
+        setLockCaret(true);
+      } else {
+        setLockCaret(false);
       }
     }
 
@@ -151,8 +157,11 @@ export const ExpressionInput = ({
      * if left key is pressed then move the caret to the start of the expression
      */
     if (leftOrRightPressed && caretIsInsideExpression) {
-      e.preventDefault();
       const selectedExpression = selectedExpressions[selectedExpressionIndex];
+      if (!lockCaret) {
+        return;
+      }
+      e.preventDefault();
       if (leftKeyPressed) {
         e.target.setSelectionRange(
           selectedExpression.startIndex,
@@ -164,6 +173,7 @@ export const ExpressionInput = ({
           selectedExpression.endIndex
         );
       }
+      setLockCaret(false);
     }
   };
 
@@ -192,6 +202,7 @@ export const ExpressionInput = ({
     // instead, we update expressionSearchValue
     // and display this value in the input
     if (editorMode === EditorMode.EXPRESSION) {
+      const expressionSearchValue = val.replace(value, "");
       setExpressionSearchValue(val.replace(value, ""));
       return;
     }
