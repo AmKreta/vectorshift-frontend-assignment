@@ -63,7 +63,7 @@ export const TextNode = ({ id, data }) => {
 
   return (
     <BaseNode header="Text" handles={handles}>
-      <FormControl label="Text:">
+      <FormControl>
         <ExpressionInput
           value={currText}
           onChange={handleTextChange}
