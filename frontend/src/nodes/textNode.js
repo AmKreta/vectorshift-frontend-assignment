@@ -1,13 +1,14 @@
 // textNode.js
-import { Position } from "reactflow";
+import { Position, useReactFlow } from "reactflow";
 import { BaseNode } from "../components/baseNode/baseNode";
 import { useStore } from "../store";
 import { NODE_TYPES } from "../constants";
 import { ExpressionInput } from "../components/expressionInput/expressionInput";
 import { FormControl } from "../components/formControl/formControl";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import styled from "@emotion/styled";
 import { Text } from "../components/text/text";
+import { useAfterNextRender } from "../hooks/useAfterNextRender";
 
 const HandleLabel = styled.div`
   position: absolute;
@@ -16,15 +17,66 @@ const HandleLabel = styled.div`
   transform: translate(-100%, -70%);
 `;
 
+const getAvailableInputNodesMap = (nodes) => {
+  return new Map(
+    nodes
+      .filter((node) => node.type === NODE_TYPES.CUSTOM_INPUT)
+      .map((node) => [node.data.inputName, node])
+  );
+};
+
 export const TextNode = ({ id, data }) => {
-  const { updateNodeField } = useStore((state) => ({
+  const afterNextRender = useAfterNextRender();
+  const { deleteElements } = useReactFlow();
+
+  const { updateNodeField, nodes, addEdge } = useStore((state) => ({
     updateNodeField: state.updateNodeField,
     nodes: state.nodes,
+    addEdge: state.onConnect,
   }));
 
+  const availableInputNodesMap = getAvailableInputNodesMap(nodes);
+  const availableInputNodesNames = [...availableInputNodesMap.values()].map(
+    (node) => node.data.inputName
+  );
+
   const selectedExpressions = data?.selectedExpressions || [];
+
+  const oldSelectedExpressionsRef = useRef(selectedExpressions);
+  oldSelectedExpressionsRef.current = selectedExpressions;
+
   const onSelectedExpressionsChange = (selectedExpressions) => {
     updateNodeField(id, "selectedExpressions", selectedExpressions);
+    afterNextRender(() => {
+      const deletedEdges = [];
+      for (let i = 0; i < oldSelectedExpressionsRef.current.length; i++) {
+        const expression = oldSelectedExpressionsRef.current[i];
+        const node = availableInputNodesMap.get(expression.value);
+        if (node) {
+          if (!selectedExpressions.find((e) => e.value === expression.value)) {
+            deletedEdges.push({ id: `${node.id}-${id}-${expression.value}` });
+          }
+        }
+      }
+      deleteElements({
+        edges: deletedEdges,
+      });
+
+      for (let i = 0; i < selectedExpressions.length; i++) {
+        const expression = selectedExpressions[i];
+        const node = availableInputNodesMap.get(expression.value);
+        if (node) {
+          const edge = {
+            id: `${node.id}-${id}-${expression.value}`,
+            source: node.id,
+            target: id,
+            sourceHandle: `${node.id}-value`,
+            targetHandle: `${id}-${expression.value}`,
+          };
+          addEdge(edge);
+        }
+      }
+    });
   };
 
   const currText = data?.text || "";
@@ -37,6 +89,9 @@ export const TextNode = ({ id, data }) => {
     const handleMap = new Map();
     for (let i = 0; i < selectedExpressions.length; i++) {
       const expression = selectedExpressions[i];
+      if (!availableInputNodesMap.has(expression.value)) {
+        continue;
+      }
       handleMap.set(expression.value, {
         type: "target",
         position: Position.Left,
@@ -54,7 +109,7 @@ export const TextNode = ({ id, data }) => {
       });
     }
     return handleMap;
-  }, [selectedExpressions]);
+  }, [selectedExpressions, availableInputNodesMap]);
 
   const handles = [
     { type: "source", position: Position.Right, id: `${id}-output` },
@@ -69,6 +124,7 @@ export const TextNode = ({ id, data }) => {
           onChange={handleTextChange}
           selectedExpressions={selectedExpressions}
           onSelectedExpressionsChange={onSelectedExpressionsChange}
+          options={availableInputNodesNames}
         />
       </FormControl>
     </BaseNode>

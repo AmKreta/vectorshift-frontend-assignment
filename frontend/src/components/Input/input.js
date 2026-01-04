@@ -39,7 +39,7 @@ const _Input = function ({ value, onChange, dynamicHeight, ...rest }, ref) {
     const ta = textAreaRef.current;
     if (ta) {
       ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
+      ta.style.height = ta.scrollHeight + 4 + "px";
     }
   }, [value]);
 

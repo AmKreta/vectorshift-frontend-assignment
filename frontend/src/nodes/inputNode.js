@@ -36,8 +36,8 @@ export const InputNode = ({ id, data }) => {
     updateNodeField(id, "inputName", e.target.value);
   };
 
-  const handleTypeChange = (e) => {
-    updateNodeField(id, "inputType", e.target.value);
+  const handleTypeChange = (value) => {
+    updateNodeField(id, "inputType", value);
   };
 
   const handles = [

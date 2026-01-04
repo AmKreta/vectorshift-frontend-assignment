@@ -360,12 +360,11 @@ export const ExpressionInput = ({
     onChange(val);
   };
 
-  const handleExpressionSelect = (e) => {
-    const val = e.target.value;
+  const handleExpressionSelect = (value) => {
     if (hasSelectedExpression) {
-      updateExpressionByComparingOldAndNewValues(val);
+      updateExpressionByComparingOldAndNewValues(value);
     } else {
-      addExpression(val);
+      addExpression(value);
     }
 
     setEditorMode(EditorMode.STRING);
