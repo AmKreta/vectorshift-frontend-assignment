@@ -10,9 +10,11 @@ const StyledLabel = styled.label`
 export const FormControl = ({ label, children }) => {
   return (
     <StyledLabel>
-      <Text variant="label" as="label">
-        {label}
-      </Text>
+      {label ? (
+        <Text variant="label" as="label">
+          {label}
+        </Text>
+      ) : null}
       {children}
     </StyledLabel>
   );
