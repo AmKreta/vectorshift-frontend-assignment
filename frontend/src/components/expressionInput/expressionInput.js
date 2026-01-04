@@ -26,12 +26,13 @@ export const ExpressionInput = ({
 
   const hasSelectedExpression = selectedExpressionIndex > -1;
   const selectedExpression = selectedExpressions[selectedExpressionIndex];
+
   const showExpressionSelect =
-    editorMode === EditorMode.EXPRESSION &&
-    options?.length &&
-    (!selectedExpression ||
-      options.findIndex((option) => option === selectedExpression.value) ===
-        -1);
+    options?.length && editorMode === EditorMode.EXPRESSION
+      ? !selectedExpression ||
+        options.findIndex((option) => option === selectedExpression.value) ===
+          -1
+      : false;
 
   const filteredOptions = options
     ? selectedExpression
