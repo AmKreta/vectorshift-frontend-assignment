@@ -414,6 +414,8 @@ export const ExpressionInput = ({
           options={filteredOptions}
           value={selecteExpressionValue}
           onChange={handleExpressionSelect}
+          open={true}
+          showHeader={false}
         />
       )}
     </>

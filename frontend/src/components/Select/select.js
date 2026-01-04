@@ -4,14 +4,15 @@ import { useState } from "react";
 const StyledSelect = styled.div`
   max-width: 100%;
   width: 100%;
-  padding: 4px 8px;
-  border: 1px solid #ccc;
+  padding: ${(props) => (props.showHeader ? "4px 8px" : "0")};
+  border: ${(props) => (props.showHeader ? "1px solid #ccc" : "none")};
   border-radius: 4px;
   font-size: 16px;
   font-weight: 500;
   color: #333;
   background-color: #f5f5f5;
   position: relative;
+  height: ${(props) => (props.showHeader ? "auto" : "0")};
 `;
 
 const SelectHeader = styled.div`
@@ -59,7 +60,14 @@ const StyledOptions = styled.div`
   }
 `;
 
-export function Select({ options, value, onChange, open, setOpen }) {
+export function Select({
+  options,
+  value,
+  onChange,
+  open,
+  setOpen,
+  showHeader = true,
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   open = typeof open !== "undefined" ? open : isOpen;
@@ -79,11 +87,13 @@ export function Select({ options, value, onChange, open, setOpen }) {
   };
 
   return (
-    <StyledSelect value={value} onChange={onChange}>
-      <SelectHeader onClick={toggleOpen}>
-        <SelectHeaderText>{value || "Select an option"}</SelectHeaderText>
-        <SelectHeaderIcon>{open ? "^" : "v"}</SelectHeaderIcon>
-      </SelectHeader>
+    <StyledSelect value={value} onChange={onChange} showHeader={showHeader}>
+      {showHeader && (
+        <SelectHeader onClick={toggleOpen}>
+          <SelectHeaderText>{value || "Select an option"}</SelectHeaderText>
+          <SelectHeaderIcon>{open ? "^" : "v"}</SelectHeaderIcon>
+        </SelectHeader>
+      )}
       {open && (
         <SelectOptionContainer onClick={handleOptionClick}>
           {options.map((option, index) => (
