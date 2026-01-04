@@ -5,17 +5,19 @@ import { useStore } from "../store";
 import { NODE_TYPES } from "../constants";
 import { ExpressionInput } from "../components/expressionInput/expressionInput";
 import { FormControl } from "../components/formControl/formControl";
+import { useMemo } from "react";
+import styled from "@emotion/styled";
+import { Text } from "../components/text/text";
 
-const getAvailableInputNodesMap = (nodes) => {
-  return new Map(
-    nodes
-      .filter((node) => node.type === NODE_TYPES.CUSTOM_INPUT)
-      .map((node) => [node.id, node])
-  );
-};
+const HandleLabel = styled.div`
+  position: absolute;
+  left: calc(0% - 4px);
+  top: calc(0% - 4px);
+  transform: translate(-100%, -70%);
+`;
 
 export const TextNode = ({ id, data }) => {
-  const { updateNodeField, nodes } = useStore((state) => ({
+  const { updateNodeField } = useStore((state) => ({
     updateNodeField: state.updateNodeField,
     nodes: state.nodes,
   }));
@@ -25,19 +27,38 @@ export const TextNode = ({ id, data }) => {
     updateNodeField(id, "selectedExpressions", selectedExpressions);
   };
 
-  const availableInputNodesMap = getAvailableInputNodesMap(nodes);
-  const availableInputNodesNames = [...availableInputNodesMap.values()].map(
-    (node) => node.data.inputName
-  );
-
   const currText = data?.text || "";
 
   const handleTextChange = (value) => {
     updateNodeField(id, "text", value);
   };
 
+  const dynamicHandles = useMemo(() => {
+    const handleMap = new Map();
+    for (let i = 0; i < selectedExpressions.length; i++) {
+      const expression = selectedExpressions[i];
+      handleMap.set(expression.value, {
+        type: "target",
+        position: Position.Left,
+        id: `${id}-${expression.value}`,
+        style: {
+          top: `${((i + 1) / (selectedExpressions.length + 1)) * 100}%`,
+        },
+        content: (
+          <HandleLabel>
+            <Text variant="small" weight="medium">
+              {expression.value}
+            </Text>
+          </HandleLabel>
+        ),
+      });
+    }
+    return handleMap;
+  }, [selectedExpressions]);
+
   const handles = [
     { type: "source", position: Position.Right, id: `${id}-output` },
+    ...dynamicHandles.values(),
   ];
 
   return (
@@ -46,7 +67,6 @@ export const TextNode = ({ id, data }) => {
         <ExpressionInput
           value={currText}
           onChange={handleTextChange}
-          options={availableInputNodesNames}
           selectedExpressions={selectedExpressions}
           onSelectedExpressionsChange={onSelectedExpressionsChange}
         />

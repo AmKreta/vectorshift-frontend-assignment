@@ -28,13 +28,16 @@ export const ExpressionInput = ({
   const selectedExpression = selectedExpressions[selectedExpressionIndex];
   const showExpressionSelect =
     editorMode === EditorMode.EXPRESSION &&
+    options?.length &&
     (!selectedExpression ||
       options.findIndex((option) => option === selectedExpression.value) ===
         -1);
 
-  const filteredOptions = selectedExpression
-    ? options.filter((option) => option.includes(selectedExpression.value))
-    : options;
+  const filteredOptions = options
+    ? selectedExpression
+      ? options.filter((option) => option.includes(selectedExpression.value))
+      : options
+    : [];
 
   function addExpression(expressionValue, removeExpressionFromValue = false) {
     if (removeExpressionFromValue) {

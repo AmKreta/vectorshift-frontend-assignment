@@ -53,17 +53,8 @@ export function BaseNode({ header, children, handles }) {
           position={handle.position}
           id={handle.id}
           style={{
-            ...(handle.content
-              ? {
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                }
-              : {
-                  height: "10px",
-                  width: "10px",
-                }),
+            height: "10px",
+            width: "10px",
             ...handle.style,
           }}
         >
