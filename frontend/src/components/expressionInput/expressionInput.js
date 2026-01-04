@@ -12,7 +12,7 @@ export const ExpressionInput = ({
   onChange,
   options,
   selectedExpressions, // {value, startIndex, endIndex}
-  selectedExpressionsChange,
+  onSelectedExpressionsChange,
   ...props
 }) => {
   const [editorMode, setEditorMode] = useState(EditorMode.STRING);
@@ -35,6 +35,24 @@ export const ExpressionInput = ({
     ? options.filter((option) => option.includes(selectedExpression.value))
     : options;
 
+  function addExpression(expressionValue) {
+    const newText = value + expressionValue + "}}";
+    const newVal = {
+      value: expressionValue,
+      startIndex: value.length,
+      endIndex: value.length + expressionValue.length,
+    };
+    onSelectedExpressionsChange([...selectedExpressions, newVal]);
+    afterNextRender(() => {
+      inputRef.current.focus();
+      const endPosition = newVal.endIndex + 2;
+      inputRef.current.setSelectionRange(endPosition, endPosition);
+    });
+    onChange(newText);
+  }
+
+  function editExpression() {}
+
   function deleteExpression(deleteIndex) {
     const selectedExpressionsCopy = [...selectedExpressions];
     const deletedExpression = selectedExpressionsCopy.splice(deleteIndex, 1)[0];
@@ -42,7 +60,7 @@ export const ExpressionInput = ({
       deletedExpression.endIndex - deletedExpression.startIndex + 4; /*{{}} */
     const lengthChange = deletedValuelength * -1;
     updateExpressionIndexes(selectedExpressionsCopy, lengthChange, deleteIndex);
-    selectedExpressionsChange(selectedExpressionsCopy);
+    onSelectedExpressionsChange(selectedExpressionsCopy);
     const newText =
       value.slice(0, deletedExpression.startIndex - 2) +
       value.slice(deletedExpression.endIndex + 2);
@@ -60,6 +78,7 @@ export const ExpressionInput = ({
      */
     if (key === "{" && isExpressionMode) {
       e.preventDefault();
+      return;
     }
 
     /*
@@ -209,7 +228,7 @@ export const ExpressionInput = ({
           currentExpression.value += val[i];
           i++;
         }
-        currentExpression.endIndex = i - 1;
+        currentExpression.endIndex = i;
 
         // we got new value for expression being edited
         // updater the value
@@ -218,21 +237,40 @@ export const ExpressionInput = ({
         selectedExpression = { ...currentExpression };
         selectedExpressions[selectedExpressionIndex] = selectedExpression;
         updateExpressionIndexes(selectedExpressions, lengthChange);
-        selectedExpressionsChange(selectedExpressions);
+        onSelectedExpressionsChange(selectedExpressions);
         onChange(val);
+        const endPosition = selectedExpression.endIndex;
+        queueMicrotask(() => {
+          inputRef.current.setSelectionRange(endPosition, endPosition);
+        });
         return;
       }
       if (val.endsWith("}")) {
         // user has pressed a closing bracket
         setEditorMode(EditorMode.STRING);
         onChange(val + "}");
+
+        // creating a new expression
+        let i = val.length - 1;
+        while (i > 2 && !(val[i] === "{" && val[i - 1] === "{")) {
+          i--;
+        }
+        const currentExpression = {
+          value: val.slice(i, val.length),
+          startIndex: i,
+          endIndex: val.length,
+        };
+        onSelectedExpressionsChange([
+          ...selectedExpressions,
+          currentExpression,
+        ]);
         return;
       }
+    } else {
+      setEditorMode(
+        val.endsWith("{{") ? EditorMode.EXPRESSION : EditorMode.STRING
+      );
     }
-
-    setEditorMode(
-      val.endsWith("{{") ? EditorMode.EXPRESSION : EditorMode.STRING
-    );
 
     onChange(val);
   };
@@ -269,7 +307,7 @@ export const ExpressionInput = ({
       };
       selectedExpressionsCopy[selectedExpressionIndex] = newVal;
       updateExpressionIndexes(selectedExpressionsCopy, lengthChange);
-      selectedExpressionsChange(selectedExpressionsCopy);
+      onSelectedExpressionsChange(selectedExpressionsCopy);
       onChange(newText);
       afterNextRender(() => {
         inputRef.current.focus();
@@ -277,22 +315,7 @@ export const ExpressionInput = ({
         inputRef.current.setSelectionRange(endPosition, endPosition);
       });
     } else {
-      /**
-       * adding a new expression
-       */
-      const newText = value + val + "}}";
-      const newVal = {
-        value: val,
-        startIndex: value.length,
-        endIndex: value.length + val.length,
-      };
-      selectedExpressionsChange([...selectedExpressions, newVal]);
-      afterNextRender(() => {
-        inputRef.current.focus();
-        const endPosition = newVal.endIndex + 2;
-        inputRef.current.setSelectionRange(endPosition, endPosition);
-      });
-      onChange(newText);
+      addExpression(val);
     }
 
     setEditorMode(EditorMode.STRING);

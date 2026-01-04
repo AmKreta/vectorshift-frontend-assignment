@@ -20,7 +20,7 @@ export const TextNode = ({ id, data }) => {
   }));
 
   const selectedExpressions = data?.selectedExpressions || [];
-  const selectedExpressionsChange = (selectedExpressions) => {
+  const onSelectedExpressionsChange = (selectedExpressions) => {
     updateNodeField(id, "selectedExpressions", selectedExpressions);
   };
 
@@ -48,7 +48,7 @@ export const TextNode = ({ id, data }) => {
           onChange={handleTextChange}
           options={availableInputNodesNames}
           selectedExpressions={selectedExpressions}
-          selectedExpressionsChange={selectedExpressionsChange}
+          onSelectedExpressionsChange={onSelectedExpressionsChange}
         />
       </label>
     </BaseNode>
