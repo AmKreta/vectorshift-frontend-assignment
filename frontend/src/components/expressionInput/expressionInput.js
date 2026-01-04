@@ -18,17 +18,21 @@ export const ExpressionInput = ({
   const [editorMode, setEditorMode] = useState(EditorMode.STRING);
   const [selectedExpressionIndex, setSelectedExpressionIndex] = useState(-1);
   const [selecteExpressionValue, setSelecteExpressionValue] = useState("");
-  const [expressionSearchValue, setExpressionSearchValue] = useState("");
   const [lockCaret, setLockCaret] = useState(false);
 
   const inputRef = useRef(null);
   const afterNextRender = useAfterNextRender();
 
-  const showExpressionSelect = editorMode === EditorMode.EXPRESSION;
   const hasSelectedExpression = selectedExpressionIndex > -1;
+  const selectedExpression = selectedExpressions[selectedExpressionIndex];
+  const showExpressionSelect =
+    editorMode === EditorMode.EXPRESSION &&
+    (!selectedExpression ||
+      options.findIndex((option) => option === selectedExpression.value) ===
+        -1);
 
-  const filteredOptions = expressionSearchValue
-    ? options.filter((option) => option.includes(expressionSearchValue))
+  const filteredOptions = selectedExpression
+    ? options.filter((option) => option.includes(selectedExpression.value))
     : options;
 
   function deleteExpression(deleteIndex) {
@@ -64,15 +68,18 @@ export const ExpressionInput = ({
     */
     if ((key === "Backspace" || key === "Delete") && isExpressionMode) {
       if (selectedExpressionIndex > -1) {
-        e.preventDefault();
-        const selectedExpression = selectedExpressions[selectedExpressionIndex];
-        deleteExpression(selectedExpressionIndex);
-        e.target.setSelectionRange(
-          selectedExpression.startIndex,
-          selectedExpression.startIndex
-        );
-        setEditorMode(EditorMode.STRING);
-        setLockCaret(false);
+        if (lockCaret) {
+          e.preventDefault();
+          const selectedExpression =
+            selectedExpressions[selectedExpressionIndex];
+          deleteExpression(selectedExpressionIndex);
+          e.target.setSelectionRange(
+            selectedExpression.startIndex,
+            selectedExpression.startIndex
+          );
+          setEditorMode(EditorMode.STRING);
+          setLockCaret(false);
+        }
         return;
       }
     }
@@ -183,30 +190,44 @@ export const ExpressionInput = ({
     const val = e.target.value;
 
     if (editorMode === EditorMode.EXPRESSION) {
-      if (val.length < value.length) {
-        // ie user has pressed backspace
-        // we no longer want to be in expression mode, cuz val us like abc {
-        setEditorMode(EditorMode.STRING);
-        setExpressionSearchValue("");
+      /**
+       * expression being edited here
+       * we need to update the value and indexes of the expression
+       * and update the text of the input
+       * and update indexes of other expressions
+       */
+      let selectedExpression = selectedExpressions[selectedExpressionIndex];
+      if (selectedExpression) {
+        // expression being edited
+        let currentExpression = {
+          value: "",
+          startIndex: selectedExpression.startIndex,
+          endIndex: -1,
+        };
+        let i = selectedExpression.startIndex;
+        while (val[i] !== "}") {
+          currentExpression.value += val[i];
+          i++;
+        }
+        currentExpression.endIndex = i - 1;
+
+        // we got new value for expression being edited
+        // updater the value
+        const lengthChange =
+          currentExpression.value.length - selectedExpression.value.length;
+        selectedExpression = { ...currentExpression };
+        selectedExpressions[selectedExpressionIndex] = selectedExpression;
+        updateExpressionIndexes(selectedExpressions, lengthChange);
+        selectedExpressionsChange(selectedExpressions);
         onChange(val);
         return;
       }
       if (val.endsWith("}")) {
         // user has pressed a closing bracket
         setEditorMode(EditorMode.STRING);
-        setExpressionSearchValue("");
         onChange(val + "}");
         return;
       }
-    }
-
-    // after writing {{, we don't update value
-    // instead, we update expressionSearchValue
-    // and display this value in the input
-    if (editorMode === EditorMode.EXPRESSION) {
-      const expressionSearchValue = val.replace(value, "");
-      setExpressionSearchValue(val.replace(value, ""));
-      return;
     }
 
     setEditorMode(
@@ -275,7 +296,6 @@ export const ExpressionInput = ({
     }
 
     setEditorMode(EditorMode.STRING);
-    setExpressionSearchValue("");
     setLockCaret(false);
     setSelecteExpressionValue("");
     setSelectedExpressionIndex(-1);
@@ -326,7 +346,7 @@ export const ExpressionInput = ({
       <input
         ref={inputRef}
         type="text"
-        value={value + expressionSearchValue}
+        value={value}
         onChange={handleChange}
         onClick={handleInputClick}
         onKeyDown={handlekeyPress}
