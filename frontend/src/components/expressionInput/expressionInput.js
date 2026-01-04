@@ -211,56 +211,84 @@ export const ExpressionInput = ({
     const rightKeyPressed = key === rightKey;
 
     const leftOrRightPressed = leftKeyPressed || rightKeyPressed;
-    const aboutToEnterExpression = leftKeyPressed
-      ? value[caretPosition - 1] === "}"
-      : rightKeyPressed
-      ? value[caretPosition + 1] === "}"
-      : false;
 
-    /**
-     * when user navigates using left or right key and expression mode is not active,
-     * when user finds an expression either start or end eg |{{expression}} or {{expression}}|
-     * then select whole expression
-     * then user can press backspace or delete to delete it (code is above)
-     * or he can selct a new expression
-     */
-    if (leftOrRightPressed && !isExpressionMode && aboutToEnterExpression) {
-      e.preventDefault();
-      let closestExpressionIndex = -1;
-      if (key === "ArrowLeft") {
-        closestExpressionIndex = selectedExpressions.findIndex(
-          (expression) => caretPosition === expression.endIndex + 2
-        );
-      } else if (key === "ArrowRight") {
-        closestExpressionIndex = selectedExpressions.findIndex(
-          (expression) => caretPosition === expression.startIndex - 2
-        );
-      }
-      if (closestExpressionIndex > -1) {
-        trySelectAndLockExpression(closestExpressionIndex);
-      } else {
-        setLockCaret(false);
-      }
-    }
-
-    const caretIsInsideExpression =
-      isExpressionMode && selectedExpressionIndex > -1;
-    /**
-     * if an expression is already selected and user presses left or right
-     * then move the caret inside the expression
-     * if right key is pressed then move the caret to the end of the expression
-     * if left key is pressed then move the caret to the start of the expression
-     */
-    if (leftOrRightPressed && caretIsInsideExpression) {
-      const selectedExpression = selectedExpressions[selectedExpressionIndex];
-      if (!lockCaret) {
+    if (leftOrRightPressed) {
+      const aboutToEnterExpression = leftKeyPressed
+        ? value[caretPosition - 1] === "}"
+        : rightKeyPressed
+        ? value[caretPosition] === "{"
+        : false;
+      /**
+       * when user navigates using left or right key and expression mode is not active,
+       * when user finds an expression either start or end eg |{{expression}} or {{expression}}|
+       * then select whole expression
+       * then user can press backspace or delete to delete it (code is above)
+       * or he can selct a new expression
+       */
+      if (!isExpressionMode && aboutToEnterExpression) {
+        e.preventDefault();
+        let closestExpressionIndex = -1;
+        if (key === "ArrowLeft") {
+          closestExpressionIndex = selectedExpressions.findIndex(
+            (expression) => caretPosition === expression.endIndex + 2
+          );
+        } else if (key === "ArrowRight") {
+          closestExpressionIndex = selectedExpressions.findIndex(
+            (expression) => caretPosition === expression.startIndex - 2
+          );
+        }
+        if (closestExpressionIndex > -1) {
+          trySelectAndLockExpression(closestExpressionIndex);
+        } else {
+          setLockCaret(false);
+        }
         return;
       }
-      e.preventDefault();
-      if (leftKeyPressed) {
-        unlockSelecedExpression(selectedExpression.startIndex);
-      } else if (rightKeyPressed) {
-        unlockSelecedExpression(selectedExpression.endIndex);
+
+      /**
+       * true when user is about to exit an expression
+       */
+      const aboutToExitExpression = leftKeyPressed
+        ? value[caretPosition - 1] === "{"
+        : rightKeyPressed
+        ? value[caretPosition] === "}"
+        : false;
+
+      /**
+       * don't let user play with braces, if expression is not selected and user is about to exit an expression
+       * then move the caret to the start or end of the expression including the braces
+       */
+      if (isExpressionMode && aboutToExitExpression && !lockCaret) {
+        e.preventDefault();
+        const selectedExpression = selectedExpressions[selectedExpressionIndex];
+        const newCaretPosition = leftKeyPressed
+          ? selectedExpression.startIndex - 2
+          : selectedExpression.endIndex + 2;
+        inputRef.current.setSelectionRange(newCaretPosition, newCaretPosition);
+        setEditorMode(EditorMode.STRING);
+        setLockCaret(false);
+        return;
+      }
+
+      const caretIsInsideExpression =
+        isExpressionMode && selectedExpressionIndex > -1;
+      /**
+       * if an expression is already selected and user presses left or right
+       * then move the caret inside the expression
+       * if right key is pressed then move the caret to the end of the expression
+       * if left key is pressed then move the caret to the start of the expression
+       */
+      if (caretIsInsideExpression) {
+        const selectedExpression = selectedExpressions[selectedExpressionIndex];
+        if (!lockCaret) {
+          return;
+        }
+        e.preventDefault();
+        if (leftKeyPressed) {
+          unlockSelecedExpression(selectedExpression.startIndex);
+        } else if (rightKeyPressed) {
+          unlockSelecedExpression(selectedExpression.endIndex);
+        }
       }
     }
   };
