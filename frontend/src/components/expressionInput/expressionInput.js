@@ -62,7 +62,7 @@ export const ExpressionInput = ({
       deleting an expression
       when an expression is seleced and user presses backspoace or delete
     */
-    if (key === "Backspace" || (key === "Delete" && isExpressionMode)) {
+    if ((key === "Backspace" || key === "Delete") && isExpressionMode) {
       if (selectedExpressionIndex > -1) {
         e.preventDefault();
         const selectedExpression = selectedExpressions[selectedExpressionIndex];
