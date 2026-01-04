@@ -35,7 +35,10 @@ export const ExpressionInput = ({
     ? options.filter((option) => option.includes(selectedExpression.value))
     : options;
 
-  function addExpression(expressionValue) {
+  function addExpression(expressionValue, removeExpressionFromValue = false) {
+    if (removeExpressionFromValue) {
+      value = value.slice(0, -expressionValue.length);
+    }
     const newText = value + expressionValue + "}}";
     const newVal = {
       value: expressionValue,
@@ -102,6 +105,12 @@ export const ExpressionInput = ({
       value.slice(0, deletedExpression.startIndex - 2) +
       value.slice(deletedExpression.endIndex + 2);
     onChange(newText);
+    inputRef.current.setSelectionRange(
+      deletedExpression.startIndex,
+      deletedExpression.startIndex
+    );
+    setEditorMode(EditorMode.STRING);
+    setLockCaret(false);
   }
 
   /**
@@ -170,19 +179,26 @@ export const ExpressionInput = ({
     */
     if ((key === "Backspace" || key === "Delete") && isExpressionMode) {
       if (selectedExpressionIndex > -1) {
+        const selectedExpression = selectedExpressions[selectedExpressionIndex];
         if (lockCaret) {
           e.preventDefault();
-          const selectedExpression =
-            selectedExpressions[selectedExpressionIndex];
           deleteExpression(selectedExpressionIndex);
-          e.target.setSelectionRange(
-            selectedExpression.startIndex,
-            selectedExpression.startIndex
-          );
-          setEditorMode(EditorMode.STRING);
-          setLockCaret(false);
+          return;
         }
-        return;
+
+        if (!selectedExpression.value) {
+          e.preventDefault();
+          deleteExpression(selectedExpressionIndex);
+          return;
+        }
+
+        const caretPosition = e.target.selectionStart;
+        const wantsToDeleteExpression =
+          caretPosition === selectedExpression.startIndex;
+        if (wantsToDeleteExpression) {
+          deleteExpression(selectedExpressionIndex);
+          return;
+        }
       }
     }
 
@@ -321,14 +337,13 @@ export const ExpressionInput = ({
       if (val.endsWith("}")) {
         // user has pressed a closing bracket
         setEditorMode(EditorMode.STRING);
-        onChange(val + "}");
-
         // creating a new expression
         let i = val.length - 1;
-        while (i > 2 && !(val[i] === "{" && val[i - 1] === "{")) {
+        while (i >= 2 && !(val[i - 1] === "{" && val[i - 2] === "{")) {
           i--;
         }
-        addExpression(val.slice(i, val.length));
+        // -1 for excluding }
+        addExpression(val.slice(i, val.length - 1), true);
         return;
       }
     } else {
