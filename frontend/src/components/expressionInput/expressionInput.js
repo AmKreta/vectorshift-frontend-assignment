@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Select } from "../Select/select";
 import { useAfterNextRender } from "../../hooks/useAfterNextRender";
 import { Input } from "../Input/input";
@@ -27,6 +27,30 @@ export const ExpressionInput = ({
   const hasSelectedExpression = selectedExpressionIndex > -1;
   const selectedExpression = selectedExpressions[selectedExpressionIndex];
 
+  /**
+   * when user is entering a new expression, expression mode is active,
+   * but no new expression is added till user presses a closing bracket
+   * this function returns that temporary expression value
+   */
+  const currentlyEnteringExpression = useMemo(() => {
+    if (editorMode !== EditorMode.EXPRESSION || selectedExpressionIndex > -1) {
+      return "";
+    }
+    let i = value.length - 1;
+    let found = false;
+    while (i >= 2) {
+      if (value[i - 1] === "{" && value[i - 2] === "{") {
+        found = true;
+        break;
+      }
+      i--;
+    }
+    if (found) {
+      return value.slice(i, value.length);
+    }
+    return "";
+  }, [value, editorMode, selectedExpressionIndex]);
+
   const showExpressionSelect =
     options?.length && editorMode === EditorMode.EXPRESSION
       ? !selectedExpression ||
@@ -34,11 +58,14 @@ export const ExpressionInput = ({
           -1
       : false;
 
-  const filteredOptions = options
-    ? selectedExpression
-      ? options.filter((option) => option.includes(selectedExpression.value))
-      : options
-    : [];
+  const filteredOptions =
+    selectedExpression || currentlyEnteringExpression
+      ? options.filter((option) =>
+          selectedExpression
+            ? option.includes(selectedExpression.value)
+            : option.includes(currentlyEnteringExpression)
+        )
+      : options;
 
   function addExpression(expressionValue, removeExpressionFromValue = false) {
     if (removeExpressionFromValue) {
