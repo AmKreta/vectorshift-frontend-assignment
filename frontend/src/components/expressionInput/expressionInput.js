@@ -36,7 +36,7 @@ export const ExpressionInput = ({
     if (editorMode !== EditorMode.EXPRESSION || selectedExpressionIndex > -1) {
       return "";
     }
-    let i = value.length - 1;
+    let i = value.length;
     let found = false;
     while (i >= 2) {
       if (value[i - 1] === "{" && value[i - 2] === "{") {
