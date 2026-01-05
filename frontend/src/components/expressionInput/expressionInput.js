@@ -75,7 +75,7 @@ export const ExpressionInput = ({
     expressionValue,
     removeTempExpressionFromValue = false
   ) {
-    if (removeTempExpressionFromValue) {
+    if (removeTempExpressionFromValue && currentlyEnteringExpression.length) {
       value = value.slice(0, -currentlyEnteringExpression.length);
     }
     const newText = value + expressionValue + "}}";
@@ -145,11 +145,12 @@ export const ExpressionInput = ({
       value.slice(deletedExpression.endIndex + 2);
     onChange(newText);
     inputRef.current.setSelectionRange(
-      deletedExpression.startIndex,
-      deletedExpression.startIndex
+      deletedExpression.endIndex + lengthChange,
+      deletedExpression.endIndex + lengthChange
     );
     setEditorMode(EditorMode.STRING);
     setLockCaret(false);
+    setSelectedExpressionIndex(-1);
   }
 
   /**
