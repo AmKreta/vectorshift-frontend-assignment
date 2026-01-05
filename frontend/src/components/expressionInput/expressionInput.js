@@ -374,17 +374,20 @@ export const ExpressionInput = ({
         });
         return;
       }
-      if (val.endsWith("}")) {
+      if (val.endsWith("}}")) {
         // user has pressed a closing bracket
-        setEditorMode(EditorMode.STRING);
         // creating a new expression
         let i = val.length - 1;
         while (i >= 2 && !(val[i - 1] === "{" && val[i - 2] === "{")) {
           i--;
         }
-        // -1 for excluding }
-        addExpression(val.slice(i, val.length - 1), true);
-        return;
+        const foundOpeninfBraces = i >= 1;
+        if (i >= 1) {
+          setEditorMode(EditorMode.STRING);
+          // -2 for excluding }
+          addExpression(val.slice(i, val.length - 2), true);
+          return;
+        }
       }
     } else {
       setEditorMode(
