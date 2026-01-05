@@ -58,14 +58,20 @@ export const ExpressionInput = ({
           -1
       : false;
 
-  const filteredOptions =
-    selectedExpression || currentlyEnteringExpression
-      ? options.filter((option) =>
-          selectedExpression
-            ? option.includes(selectedExpression.value)
-            : option.includes(currentlyEnteringExpression)
-        )
-      : options;
+  const filteredOptions = useMemo(() => {
+    const filteredOptions = [];
+    const query = selectedExpression
+      ? selectedExpression.value
+      : currentlyEnteringExpression;
+    for (let i = 0; i < options.length; i++) {
+      if (!query) {
+        filteredOptions.push(options[i]);
+      } else if (options[i].includes(query)) {
+        filteredOptions.push(options[i]);
+      }
+    }
+    return filteredOptions;
+  }, [options, selectedExpression, currentlyEnteringExpression]);
 
   /**
    * tempExpression is the expression currentlyBeing entered by user
@@ -265,7 +271,6 @@ export const ExpressionInput = ({
     const rightKey = "ArrowRight";
     const leftKeyPressed = key === leftKey;
     const rightKeyPressed = key === rightKey;
-
     const leftOrRightPressed = leftKeyPressed || rightKeyPressed;
 
     if (leftOrRightPressed) {
@@ -346,6 +351,38 @@ export const ExpressionInput = ({
           unlockSelecedExpression(selectedExpression.endIndex);
         }
       }
+    }
+  };
+
+  const handleKeyRelease = (e) => {
+    const key = e.key;
+    const isExpressionMode = editorMode === EditorMode.EXPRESSION;
+    const caretPosition = e.target.selectionStart;
+    const upKey = "ArrowUp";
+    const downKey = "ArrowDown";
+    const upKeyPressed = key === upKey;
+    const downKeyPressed = key === downKey;
+
+    const upOrDownPressed = upKeyPressed || downKeyPressed;
+    if (upOrDownPressed) {
+      if (hasSelectedExpression && lockCaret) {
+        // disselect this expression
+        setLockCaret(false);
+        setSelectedExpressionIndex(-1);
+        setEditorMode(EditorMode.STRING);
+      }
+
+      const insideExpressionAtIndex = selectedExpressions.findIndex(
+        (expression) =>
+          caretPosition >= expression.startIndex &&
+          caretPosition <= expression.endIndex
+      );
+      if (insideExpressionAtIndex === -1) {
+        return;
+      }
+      e.preventDefault();
+      trySelectAndLockExpression(insideExpressionAtIndex);
+      return;
     }
   };
 
@@ -456,6 +493,7 @@ export const ExpressionInput = ({
         onChange={handleChange}
         onClick={handleInputClick}
         onKeyDown={handlekeyPress}
+        onKeyUp={handleKeyRelease}
         dynamicHeight
         // onBlur={handleBlur}
         {...props}
