@@ -67,9 +67,16 @@ export const ExpressionInput = ({
         )
       : options;
 
-  function addExpression(expressionValue, removeExpressionFromValue = false) {
-    if (removeExpressionFromValue) {
-      value = value.slice(0, -expressionValue.length);
+  /**
+   * tempExpression is the expression currentlyBeing entered by user
+   * eg user presses } or selects after entering{{exp , exp is temp expression
+   */
+  function addExpression(
+    expressionValue,
+    removeTempExpressionFromValue = false
+  ) {
+    if (removeTempExpressionFromValue) {
+      value = value.slice(0, -currentlyEnteringExpression.length);
     }
     const newText = value + expressionValue + "}}";
     const newVal = {
@@ -404,7 +411,7 @@ export const ExpressionInput = ({
       }
       updateExpressionByComparingOldAndNewValues(val);
     } else {
-      addExpression(val);
+      addExpression(val, true);
     }
 
     setEditorMode(EditorMode.STRING);
