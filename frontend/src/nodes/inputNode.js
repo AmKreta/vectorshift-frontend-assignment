@@ -30,7 +30,7 @@ export const InputNode = ({ id, data }) => {
     if (!data?.inputType) {
       updateNodeField(id, "inputType", inputType);
     }
-  }, [data?.inputName, data?.inputType]);
+  }, []);
 
   const handleNameChange = (e) => {
     updateNodeField(id, "inputName", e.target.value);

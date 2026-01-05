@@ -30,7 +30,7 @@ export const OutputNode = ({ id, data }) => {
     if (!data?.outputType) {
       updateNodeField(id, "outputType", outputType);
     }
-  }, [data?.outputName, data?.outputType]);
+  }, []);
 
   const handleNameChange = (e) => {
     updateNodeField(id, "outputName", e.target.value);
